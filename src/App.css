@@ -1,0 +1,13 @@
+.global-container {
+  width: 500px;
+  border: 1px solid red;
+}
+
+.bitcoin-list-container {
+  border: 1px solid red;
+  width: 100%;
+}
+
+.bitcoin-list {
+  list-style-type: none;
+}
