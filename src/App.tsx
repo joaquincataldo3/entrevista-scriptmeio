@@ -13,20 +13,21 @@ function App() {
   const apiKey = "F11A11C0-A6F5-4D6A-5433-42FF831C10B1";
   const [data, setData] = useState<any>([]);
 
-  const transformToUppercase = (constants: string[]) => {
-    for(let i = 0; i < constants.length; i++) {
-      constants[i].toUpperCase();
-    }
-    return constants;
+  // Aca esta la high order fucntion que hablabamos y un ejemplo de como podria quedar mas generica, 
+  // despues en vez de llamar directo al fetchdata lo llamas como adentro del useEffect y lo podes hacer para cualquier funcion que necesites y con la cantidad de parametros que quieras
+
+  const transformToUppercase = (...args: any) => {
+    const [fn, ...params] = args
+    const upperCaseParams = params.map( (param: string) => param.toUpperCase())
+    fn(...upperCaseParams)
   }
 
+  // Esto se puede separara en varias funciones para modularizar el codigo
+  // Funcion de fetchdata en modulo aparte (encargada de hacer un request y devolver el resultado)
+  // funcion de iniciallizar los datos (llama a fetchadata y a pushratecloses) asi queda la logica desacoplada
+
   const fetchData = async (coin: string, exchangeRate: string, period_id: string) => {
-    const constantsArray = [coin, exchangeRate, period_id];
-    const arrayToUpper = transformToUppercase(constantsArray);
-    const coinUpper = arrayToUpper[0];
-    const exchangeRateUpper = arrayToUpper[1];
-    const periodIdToUpper = arrayToUpper[2];
-    const response = await axios.get(`${apiUrl}/${exchangeRateUpper}/${coinUpper}/history?period_id=${periodIdToUpper}`, {
+    const response = await axios.get(`${apiUrl}/${exchangeRate}/${coin}/history?period_id=${period_id}`, {
       headers: {
         'Content-Type': 'application/json',
         'X-CoinAPI-Key': apiKey
@@ -36,24 +37,23 @@ function App() {
     pushRateCloses(data);
   }
 
+  // Se pueden mejorar los nombres en general, van sugerencias pushrateCloses por parseCryptoData, rateCloses por price
   const pushRateCloses = (data: any) => {
-    let rateClosesMatrix: any = [];
-    let columnsName = ["Period Start", "Rate Close"];
-    rateClosesMatrix.push(columnsName);
+    let rateClosesMatrix: any = [["Period Start", "Rate Close"]];
     for (let i = 0; i < data.length; i++) {
       let position = data[i];
       let rateClose = [position.time_period_start, position.rate_close]
-      //rateClose.push(position.time_period_start);
-      //rateClose.push(position.rate_close);
       rateClosesMatrix.push(rateClose);
     }
     setData(rateClosesMatrix);
   }
 
   useEffect(() => {
-    fetchData(coin, exchangeRate, periodId);
+    // Se llama asi, primer argumento la funcion y despues todos los parametros
+    transformToUppercase(fetchData, coin, exchangeRate, periodId)
   }, [])
 
+  // La grafica se podria haber hecho en un componente a parte y encapsular la logica del renderizado (estilos, opciones, etc) ahi
   const options = {
     title: `${coin} Performance`,
     hAxis: { title: "Year", titleTextStyle: { color: "#333" } },
